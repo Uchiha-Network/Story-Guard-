@@ -1,11 +1,40 @@
  'use client';
 
 import Link from 'next/link';
-import { Shield, Menu } from 'lucide-react';
-import { useState } from 'react';
+import { Shield, Menu, Wallet } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { connectWallet, getWalletAddress } from '@/lib/story';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  useEffect(() => {
+    // Check if wallet is already connected
+    checkWalletConnection();
+  }, []);
+
+  const checkWalletConnection = async () => {
+    const address = await getWalletAddress();
+    setWalletAddress(address);
+  };
+
+  const handleConnectWallet = async () => {
+    setIsConnecting(true);
+    try {
+      const address = await connectWallet();
+      setWalletAddress(address);
+    } catch (error: any) {
+      alert(error.message || 'Failed to connect wallet');
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const formatAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
   return (
     <nav className="bg-gradient-to-r from-purple-900 via-purple-800 to-indigo-900 text-white shadow-lg">
@@ -30,9 +59,31 @@ export default function Navbar() {
             <Link href="/scan" className="hover:text-purple-300 transition">
               Scan
             </Link>
-            <button className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition">
-              Connect Wallet
-            </button>
+            
+            {walletAddress ? (
+              <div className="flex items-center space-x-2 bg-purple-700 px-4 py-2 rounded-lg">
+                <Wallet className="h-4 w-4" />
+                <span className="text-sm">{formatAddress(walletAddress)}</span>
+              </div>
+            ) : (
+              <button
+                onClick={handleConnectWallet}
+                disabled={isConnecting}
+                className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition flex items-center space-x-2 disabled:opacity-50"
+              >
+                {isConnecting ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    <span>Connecting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Wallet className="h-4 w-4" />
+                    <span>Connect Wallet</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -59,9 +110,21 @@ export default function Navbar() {
           <Link href="/scan" className="block hover:text-purple-300 transition">
             Scan
           </Link>
-          <button className="w-full bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition">
-            Connect Wallet
-          </button>
+          
+          {walletAddress ? (
+            <div className="flex items-center space-x-2 bg-purple-700 px-4 py-2 rounded-lg">
+              <Wallet className="h-4 w-4" />
+              <span className="text-sm">{formatAddress(walletAddress)}</span>
+            </div>
+          ) : (
+            <button
+              onClick={handleConnectWallet}
+              disabled={isConnecting}
+              className="w-full bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition"
+            >
+              {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+            </button>
+          )}
         </div>
       )}
     </nav>

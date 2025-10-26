@@ -78,10 +78,10 @@ export default function ScanResults({ result }: ScanResultsProps) {
           {result.violations.map((violation) => (
             <div
               key={violation.id}
-              className="border border-red-200 bg-red-50 rounded-lg p-4 hover:border-red-300 transition"
+              className="border border-gray-200 bg-white rounded-lg p-4 hover:border-gray-300 transition shadow-sm"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4 flex-1">
+              <div>
+                <div className="flex items-start space-x-4">
                   {/* Image Placeholder */}
                   <div className="flex space-x-2">
                     <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -92,18 +92,18 @@ export default function ScanResults({ result }: ScanResultsProps) {
                   {/* Details */}
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
-                      <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded">
+                      <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded">
                         {violation.platform}
                       </span>
                       <span className="text-sm text-gray-600">
-                        Similarity: <span className="font-bold text-red-600">{violation.similarity}%</span>
+                        Similarity: <span className="font-bold text-purple-600">{violation.similarity}%</span>
                       </span>
                     </div>
                     
                     <div className="mb-2">
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
-                          className="bg-red-500 h-2 rounded-full transition-all"
+                          className="bg-purple-600 h-2 rounded-full transition-all"
                           style={{ width: `${violation.similarity}%` }}
                         />
                       </div>
@@ -122,11 +122,11 @@ export default function ScanResults({ result }: ScanResultsProps) {
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col space-y-2 ml-4">
-                  <button className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg font-semibold transition whitespace-nowrap">
+                <div className="flex gap-2 mt-4">
+                  <button className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg font-semibold transition">
                     File Dispute
                   </button>
-                  <button className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm rounded-lg font-semibold transition whitespace-nowrap">
+                  <button className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm rounded-lg font-semibold transition">
                     Offer License
                   </button>
                 </div>

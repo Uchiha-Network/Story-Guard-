@@ -19,8 +19,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <Navbar />
-        <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-          {children}
+        <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 relative">
+          <div className="relative z-10">
+            {children}
+          </div>
         </main>
       </body>
     </html>

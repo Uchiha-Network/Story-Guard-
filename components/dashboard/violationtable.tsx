@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertCircle, ExternalLink, Check, X } from 'lucide-react';
+import { AlertCircle, ExternalLink, Check, X, Shield } from 'lucide-react'; // ✅ Add Shield import
 
 interface Violation {
   id: string;
@@ -46,7 +46,7 @@ export default function ViolationsTable() {
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          fetchViolations(); // Refresh the list
+          fetchViolations();
         }
       })
       .catch(err => console.error('Failed to update status:', err));
@@ -79,6 +79,11 @@ export default function ViolationsTable() {
           <div className="flex items-center space-x-2">
             <AlertCircle className="h-5 w-5 text-red-500" />
             <h2 className="text-xl font-bold text-gray-800">Recent Violations</h2>
+            {/* ✅ Add Blockchain Badge Here */}
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              <Shield className="h-3 w-3 mr-1" />
+              On-Chain Protected
+            </span>
           </div>
           <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">
             {pendingCount} Active
@@ -117,8 +122,13 @@ export default function ViolationsTable() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {violations.map((violation) => (
                   <tr key={violation.id} className="hover:bg-gray-50 transition">
+                    {/* ✅ Platform column with blockchain indicator */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900">{violation.platform}</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-900">{violation.platform}</span>
+                        <Shield className="h-3 w-3 text-green-600" aria-hidden="true" />
+                        <span className="sr-only">Protected by blockchain</span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -143,15 +153,15 @@ export default function ViolationsTable() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center space-x-2">
-                        
+                        <a
                           href={violation.foundUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-purple-600 hover:text-purple-800 transition"
                           title="View original"
-                        
+                        >
                           <ExternalLink className="h-5 w-5" />
-                        
+                        </a>
                         <button
                           onClick={() => updateStatus(violation.id, 'resolved')}
                           className="text-green-600 hover:text-green-800 transition"

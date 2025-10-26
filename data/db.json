@@ -1,0 +1,67 @@
+{
+  "registeredIPs": [
+    {
+      "id": "sp_1761438722355_zgbtpxmwm",
+      "imageUrl": "ipfs://Qmfxvwd7xjodr",
+      "imageName": "field.jpeg",
+      "imageHash": "0000000044bba882",
+      "creatorName": "NFF",
+      "licenseType": "All Rights Reserved",
+      "description": "NFF",
+      "tags": [
+        "Land"
+      ],
+      "uploadedAt": "2025-10-26T00:32:02.380Z",
+      "fileSize": 126465,
+      "dimensions": {
+        "width": 0,
+        "height": 0
+      }
+    },
+    {
+      "id": "sp_1761439076322_okwiwnrt1",
+      "imageUrl": "ipfs://Qm9rf4232qne",
+      "imageName": "field.jpeg",
+      "imageHash": "000000001b741a36",
+      "creatorName": "Field",
+      "licenseType": "All Rights Reserved",
+      "description": "Field",
+      "tags": [
+        "Land"
+      ],
+      "uploadedAt": "2025-10-26T00:37:56.339Z",
+      "fileSize": 126465,
+      "dimensions": {
+        "width": 0,
+        "height": 0
+      }
+    }
+  ],
+  "violations": [],
+  "scanHistory": [
+    {
+      "id": "scan_1761438737701",
+      "url": "https://x.com/Mbahdeyforyou/status/1982090567116075254/photo/1",
+      "scannedAt": "2025-10-26T00:32:17.701Z",
+      "imagesFound": 0,
+      "violationsDetected": 0,
+      "status": "completed"
+    },
+    {
+      "id": "scan_1761438740318",
+      "url": "https://x.com/Mbahdeyforyou/status/1982090567116075254/photo/1",
+      "scannedAt": "2025-10-26T00:32:20.318Z",
+      "imagesFound": 0,
+      "violationsDetected": 0,
+      "status": "completed"
+    },
+    {
+      "id": "scan_1761438777843",
+      "url": "https://x.com/Mbahdeyforyou/status/1982090567116075254/photo/1",
+      "scannedAt": "2025-10-26T00:32:57.843Z",
+      "imagesFound": 0,
+      "violationsDetected": 0,
+      "status": "completed"
+    }
+  ]
+}

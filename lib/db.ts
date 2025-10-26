@@ -1,5 +1,9 @@
-// Simple in-memory database (replace with real DB later)
-// In production, use PostgreSQL, MongoDB, or Supabase
+// File-backed JSON database for simple persistence
+// This is a low-risk replacement for the in-memory DB used during development.
+// It stores data in `data/db.json`. For production, replace with a real DB (Postgres, Supabase, etc.).
+
+import fs from 'fs/promises';
+import path from 'path';
 
 export interface RegisteredIP {
   id: string;
@@ -41,10 +45,71 @@ class Database {
   private registeredIPs: Map<string, RegisteredIP> = new Map();
   private violations: Map<string, Violation> = new Map();
   private scanHistory: Map<string, ScanHistory> = new Map();
+  private dataPath: string;
+
+  constructor() {
+    // Store data in a project-local persistent directory so dev hot reloads
+    // don't wipe registrations. Using workspace-local `storyguard-data`.
+    const dataDir = process.env.NODE_ENV === 'production'
+      ? path.join(process.cwd(), 'data')
+      : path.join(process.cwd(), 'storyguard-data');
+    this.dataPath = path.join(dataDir, 'db.json');
+    // Load from disk if possible. Do not block constructor with await — use a sync startup loader instead.
+    this.loadFromDisk().catch(err => {
+      // If loading fails, keep using in-memory and create directory on demand
+      console.warn('Could not load DB from disk, using in-memory fallback:', err?.message ?? err);
+    });
+  }
+
+  private async loadFromDisk() {
+    try {
+      const raw = await fs.readFile(this.dataPath, 'utf-8');
+      const parsed = JSON.parse(raw);
+
+      if (parsed.registeredIPs) {
+        for (const ip of parsed.registeredIPs) {
+          this.registeredIPs.set(ip.id, ip);
+        }
+      }
+
+      if (parsed.violations) {
+        for (const v of parsed.violations) {
+          this.violations.set(v.id, v);
+        }
+      }
+
+      if (parsed.scanHistory) {
+        for (const s of parsed.scanHistory) {
+          this.scanHistory.set(s.id, s);
+        }
+      }
+    } catch (err: any) {
+      // If file doesn't exist, create directories and write an initial empty file
+      if (err.code === 'ENOENT') {
+        await fs.mkdir(path.dirname(this.dataPath), { recursive: true });
+        await this.saveToDisk();
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  private async saveToDisk() {
+    const payload = {
+      registeredIPs: Array.from(this.registeredIPs.values()),
+      violations: Array.from(this.violations.values()),
+      scanHistory: Array.from(this.scanHistory.values()),
+    };
+
+    await fs.mkdir(path.dirname(this.dataPath), { recursive: true });
+    await fs.writeFile(this.dataPath, JSON.stringify(payload, null, 2), 'utf-8');
+  }
 
   // Registered IP Methods
   addIP(ip: RegisteredIP): RegisteredIP {
     this.registeredIPs.set(ip.id, ip);
+    // Persist asynchronously, don't block the request
+    this.saveToDisk().catch(err => console.error('Failed to save DB:', err));
     return ip;
   }
 
@@ -57,12 +122,15 @@ class Database {
   }
 
   deleteIP(id: string): boolean {
-    return this.registeredIPs.delete(id);
+    const result = this.registeredIPs.delete(id);
+    this.saveToDisk().catch(err => console.error('Failed to save DB:', err));
+    return result;
   }
 
   // Violation Methods
   addViolation(violation: Violation): Violation {
     this.violations.set(violation.id, violation);
+    this.saveToDisk().catch(err => console.error('Failed to save DB:', err));
     return violation;
   }
 
@@ -82,6 +150,7 @@ class Database {
     const violation = this.violations.get(id);
     if (violation) {
       violation.status = status;
+      this.saveToDisk().catch(err => console.error('Failed to save DB:', err));
       return true;
     }
     return false;
@@ -90,6 +159,7 @@ class Database {
   // Scan History Methods
   addScan(scan: ScanHistory): ScanHistory {
     this.scanHistory.set(scan.id, scan);
+    this.saveToDisk().catch(err => console.error('Failed to save DB:', err));
     return scan;
   }
 
@@ -121,75 +191,6 @@ class Database {
 
 // Create singleton instance
 const database = new Database();
-
-// Seed with mock data
-database.addIP({
-  id: '1',
-  imageUrl: '/images/sample1.jpg',
-  imageName: 'sunset-beach.jpg',
-  imageHash: 'abc123def456',
-  creatorName: 'John Doe Photography',
-  licenseType: 'All Rights Reserved',
-  description: 'Beautiful sunset at the beach',
-  tags: ['sunset', 'beach', 'nature'],
-  uploadedAt: new Date().toISOString(),
-  fileSize: 2048000,
-  dimensions: { width: 1920, height: 1080 },
-});
-
-database.addIP({
-  id: '2',
-  imageUrl: '/images/sample2.jpg',
-  imageName: 'mountain-view.jpg',
-  imageHash: 'def456ghi789',
-  creatorName: 'John Doe Photography',
-  licenseType: 'Creative Commons BY',
-  description: 'Mountain landscape',
-  tags: ['mountain', 'landscape', 'nature'],
-  uploadedAt: new Date().toISOString(),
-  fileSize: 3072000,
-  dimensions: { width: 2560, height: 1440 },
-});
-
-database.addViolation({
-  id: '1',
-  registeredIpId: '1',
-  foundUrl: 'https://instagram.com/p/example1',
-  foundImageUrl: 'https://example.com/stolen1.jpg',
-  platform: 'Instagram',
-  similarity: 98,
-  detectedAt: new Date().toISOString(),
-  status: 'pending',
-});
-
-database.addViolation({
-  id: '2',
-  registeredIpId: '2',
-  foundUrl: 'https://twitter.com/example2',
-  foundImageUrl: 'https://example.com/stolen2.jpg',
-  platform: 'Twitter',
-  similarity: 94,
-  detectedAt: new Date().toISOString(),
-  status: 'disputed',
-});
-
-database.addScan({
-  id: '1',
-  url: 'https://instagram.com/photographer',
-  scannedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  imagesFound: 45,
-  violationsDetected: 2,
-  status: 'completed',
-});
-
-database.addScan({
-  id: '2',
-  url: 'https://pinterest.com/board/nature',
-  scannedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-  imagesFound: 120,
-  violationsDetected: 0,
-  status: 'completed',
-});
 
 // Export the database instance
 export const db = database;

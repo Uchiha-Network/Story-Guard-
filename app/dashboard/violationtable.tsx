@@ -2,6 +2,7 @@
 
 import { AlertCircle, ExternalLink, Check, X } from 'lucide-react';
 
+
 interface Violation {
   id: string;
   imageUrl: string;

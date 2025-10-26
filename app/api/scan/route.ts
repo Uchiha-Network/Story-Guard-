@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+interface FoundImage {
+  url: string;
+  hash: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -15,12 +20,12 @@ export async function POST(request: NextRequest) {
 
     // Helper function: Compare hashes
     function hashSimilarity(hash1: string, hash2: string): number {
-      if (hash1.length !== hash2.length) return 0;
-      let matches = 0;
-      for (let i = 0; i < hash1.length; i++) {
-        if (hash1[i] === hash2[i]) matches++;
+      // For testing, return 100 if the URL contains the registered image URL
+      // This is temporary until we implement proper image hash comparison
+      if (url.includes(hash2)) {
+        return 100;
       }
-      return Math.round((matches / hash1.length) * 100);
+      return 0;
     }
 
     // Helper function: Get platform name
@@ -34,36 +39,61 @@ export async function POST(request: NextRequest) {
 
     const scanId = `scan_${Date.now()}`;
 
-    // Simulate scanning delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Get registered IPs first
+  const registeredIPs = db.getAllIPs();
+  const detectedViolations: Array<any> = [];
 
-    // Mock found images with hashes
-    const foundImages = [
-      { url: 'https://example.com/img1.jpg', hash: 'abc123def456' },
-      { url: 'https://example.com/img2.jpg', hash: 'xyz789uvw012' },
-    ];
+    // If no registered images, return early with no violations
+    if (registeredIPs.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          scanId: scanId,
+          url: url,
+          imagesFound: 0,
+          violationsDetected: 0,
+          violations: [],
+        },
+      });
+    }
 
-    // Get registered IPs
-    const registeredIPs = db.getAllIPs();
-    const detectedViolations = [];
+    // For now we don't scrape the page. We'll try two pragmatic checks:
+    // 1) If the scanned URL directly references a registered IP's upload filename
+    // 2) If the scanned URL contains the registered imageUrl substring
+    // This makes dev scanning reliable for pages that include the uploaded file path.
 
-    // Compare each found image
-    for (const foundImg of foundImages) {
+    const foundImages: FoundImage[] = [{ url, hash: url }];
+
+    // Only check for violations if we have registered images
+    if (registeredIPs.length > 0) {
       for (const registeredIP of registeredIPs) {
-        const similarity = hashSimilarity(foundImg.hash, registeredIP.imageHash);
-        
-        if (similarity > 85) {
+        const regUrl = (registeredIP.imageUrl || '').toString();
+        // derive a filename to match against scanned URL
+        const regFilename = regUrl.split('/').pop() || '';
+
+        // Skip if there's no useful identifier
+        if (!regFilename && !regUrl) continue;
+
+        // match by filename or by substring of imageUrl
+        const isMatchByFilename = regFilename && url.includes(regFilename);
+        const isMatchByUrlSubstring = regUrl && url.includes(regUrl);
+
+        if (isMatchByFilename || isMatchByUrlSubstring) {
+          // Avoid adding duplicate violations for the same registered IP + scan
+          const alreadyExists = detectedViolations.some(v => v.registeredIpId === registeredIP.id && v.foundUrl === url);
+          if (alreadyExists) continue;
+
           const violation = {
             id: `vio_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             registeredIpId: registeredIP.id,
             foundUrl: url,
-            foundImageUrl: foundImg.url,
+            foundImageUrl: regUrl || url,
             platform: getPlatform(url),
-            similarity: similarity,
+            similarity: 100,
             detectedAt: new Date().toISOString(),
             status: 'pending' as const,
           };
-          
+
           db.addViolation(violation);
           detectedViolations.push(violation);
         }

@@ -146,17 +146,49 @@ export default function ImageUpload() {
 
       {/* Action Buttons */}
       {images.length > 0 && (
-        <div className="flex justify-end space-x-4">
-          <button
-            onClick={() => setImages([])}
-            className="px-6 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition"
-          >
-            Clear All
-          </button>
-          <button className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition">
-            Register {images.length} Image{images.length !== 1 ? 's' : ''} on Blockchain
-          </button>
-        </div>
+          <div className="flex justify-end space-x-4">
+            <button
+              onClick={() => setImages([])}
+              className="px-6 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition"
+            >
+              Clear All
+            </button>
+            <button
+              onClick={async () => {
+                // Upload each image as multipart/form-data to the server
+                for (const img of images) {
+                  const form = new FormData();
+                  form.append('file', img.file, img.name);
+                  form.append('imageName', img.name);
+                  form.append('creatorName', 'Anonymous');
+                  form.append('licenseType', 'All Rights Reserved');
+
+                  try {
+                    const res = await fetch('/api/register', {
+                      method: 'POST',
+                      body: form,
+                    });
+
+                    const json = await res.json();
+                    if (!res.ok) {
+                      console.error('Failed to register image:', json);
+                      // continue with next file
+                    } else {
+                      console.log('Registered image:', json);
+                    }
+                  } catch (err) {
+                    console.error('Upload error:', err);
+                  }
+                }
+
+                // Optionally clear images after upload
+                setImages([]);
+              }}
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition"
+            >
+              Register {images.length} Image{images.length !== 1 ? 's' : ''} on Blockchain
+            </button>
+          </div>
       )}
     </div>
   );
